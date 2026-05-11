@@ -12,6 +12,7 @@
     "@codemirror/lang-sql": "^6.10.0",
     "@uiw/react-codemirror": "^4.25.9",
     "axios": "^1.16.0",
+    "d3": "^7.9.0",
     "preact": "^10.29.1"
   },
   "devDependencies": {

@@ -3,6 +3,7 @@ import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import axios from 'axios'
 import './App.css'
+import PlanVisualizer from './PlanVisualizer'
 
 function App() {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;')
@@ -34,7 +35,7 @@ function App() {
 
   return (
     <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '1rem' }}>QueryLab</h1>
+      <h1 style={{ marginBottom: '3rem' }}>QueryLab</h1>
 
       {/* SQL Editor */}
       <div style={{ border: '1px solid #ccc', borderRadius: '6px', marginBottom: '1rem' }}>
@@ -102,23 +103,8 @@ function App() {
         </div>
       )}
 
-      {/* Raw Plan — just show JSON for now, Day 4 makes this visual */}
-      {plan && (
-        <div>
-          <h3 style={{ marginBottom: '0.5rem' }}>Query Plan (raw — visualizer coming Day 4)</h3>
-          <pre style={{
-            background: '#1e293b',
-            color: '#94a3b8',
-            padding: '1rem',
-            borderRadius: '6px',
-            fontSize: '12px',
-            overflowX: 'auto',
-            maxHeight: '300px'
-          }}>
-            {JSON.stringify(plan, null, 2)}
-          </pre>
-        </div>
-      )}
+      
+      {plan && <PlanVisualizer plan={plan} />}
     </div>
   )
 }
