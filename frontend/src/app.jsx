@@ -4,6 +4,7 @@ import { sql } from '@codemirror/lang-sql'
 import axios from 'axios'
 import './App.css'
 import PlanVisualizer from './PlanVisualizer'
+import IndexAdvisor from './IndexAdvisor'
 
 function App() {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;')
@@ -11,21 +12,28 @@ function App() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [plan, setPlan] = useState(null)
+  const [lastQuery, setLastQuery] = useState(null)
+
+  // Check if query is a SELECT statement
+  const isSelect = (q) => q.trim().toLowerCase().startsWith('select')
 
   const runQuery = async () => {
     setLoading(true)
     setError(null)
     setResults(null)
     setPlan(null)
+    setLastQuery(null)
 
     try {
-      // Run the query
       const res = await axios.post('http://localhost:3000/query', { sql: query })
       setResults(res.data)
 
-      // Also fetch the explain plan
-      const explainRes = await axios.post('http://localhost:3000/explain', { sql: query })
-      setPlan(explainRes.data.plan)
+      // Only fetch plan and advisor for SELECT queries
+      if (isSelect(query)) {
+        setLastQuery(query)
+        const explainRes = await axios.post('http://localhost:3000/explain', { sql: query })
+        setPlan(explainRes.data.plan)
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Something went wrong')
     } finally {
@@ -72,8 +80,23 @@ function App() {
         </div>
       )}
 
-      {/* Results Table */}
-      {results && (
+      {/* DDL success message — CREATE, DROP, INSERT etc */}
+      {results && (!results.fields || results.fields.length === 0) && (
+        <div style={{
+          background: '#f0fdf4',
+          border: '1px solid #86efac',
+          borderRadius: '6px',
+          padding: '1rem',
+          color: '#166534',
+          fontSize: '13px',
+          marginBottom: '1.5rem'
+        }}>
+          ✅ Query executed successfully. {results.rowCount} rows affected.
+        </div>
+      )}
+
+      {/* Results Table — only when fields exist */}
+      {results && results.fields && results.fields.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ marginBottom: '0.5rem' }}>Results — {results.rowCount} rows</h3>
           <div style={{ overflowX: 'auto' }}>
@@ -103,8 +126,8 @@ function App() {
         </div>
       )}
 
-      
       {plan && <PlanVisualizer plan={plan} />}
+      {lastQuery && <IndexAdvisor sql={lastQuery} />}
     </div>
   )
 }
