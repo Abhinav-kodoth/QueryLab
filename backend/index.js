@@ -152,6 +152,32 @@ app.post('/advise', async (req, res) => {
   }
 })
 
+app.get('/stats/slow-queries', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT 
+        query,
+        calls,
+        round(mean_exec_time::numeric, 2) AS avg_time_ms,
+        round(total_exec_time::numeric, 2) AS total_time_ms,
+        round(min_exec_time::numeric, 2) AS min_time_ms,
+        round(max_exec_time::numeric, 2) AS max_time_ms,
+        rows,
+        round(100.0 * shared_blks_hit / 
+          nullif(shared_blks_hit + shared_blks_read, 0), 2
+        ) AS cache_hit_ratio
+      FROM pg_stat_statements
+      WHERE query NOT LIKE '%pg_stat_statements%' 
+      AND query NOT LIKE '%EXPLAIN%'
+      ORDER BY mean_exec_time DESC
+      LIMIT 5
+    `)
+    res.json({ queries: result.rows })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 
 
 

@@ -1,12 +1,43 @@
 import { useState } from 'react'
+import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import axios from 'axios'
 import './App.css'
 import PlanVisualizer from './PlanVisualizer'
 import IndexAdvisor from './IndexAdvisor'
+import SlowQueryDashboard from './SlowQueryDashboard'
 
-function App() {
+function NavBar() {
+  const location = useLocation()
+
+  const linkStyle = (path) => ({
+    textDecoration: 'none',
+    fontSize: '14px',
+    fontFamily: 'monospace',
+    color: location.pathname === path ? '#2563eb' : '#64748b',
+    fontWeight: location.pathname === path ? '600' : '400',
+    borderBottom: location.pathname === path ? '2px solid #2563eb' : '2px solid transparent',
+    paddingBottom: '4px'
+  })
+
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '2rem',
+      marginBottom: '2rem',
+      borderBottom: '1px solid #e2e8f0',
+      paddingBottom: '1rem'
+    }}>
+      <h1 style={{ margin: 0, fontFamily: 'monospace' }}>QueryLab</h1>
+      <Link to="/" style={linkStyle('/')}>Editor</Link>
+      <Link to="/dashboard" style={linkStyle('/dashboard')}>Slow Queries</Link>
+    </div>
+  )
+}
+
+function Editor() {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;')
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
@@ -14,7 +45,6 @@ function App() {
   const [plan, setPlan] = useState(null)
   const [lastQuery, setLastQuery] = useState(null)
 
-  // Check if query is a SELECT statement
   const isSelect = (q) => q.trim().toLowerCase().startsWith('select')
 
   const runQuery = async () => {
@@ -28,7 +58,6 @@ function App() {
       const res = await axios.post('http://localhost:3000/query', { sql: query })
       setResults(res.data)
 
-      // Only fetch plan and advisor for SELECT queries
       if (isSelect(query)) {
         setLastQuery(query)
         const explainRes = await axios.post('http://localhost:3000/explain', { sql: query })
@@ -42,9 +71,7 @@ function App() {
   }
 
   return (
-    <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '1000px', margin: '0 auto' }}>
-      <h1 style={{ marginBottom: '3rem' }}>QueryLab</h1>
-
+    <div>
       {/* SQL Editor */}
       <div style={{ border: '1px solid #ccc', borderRadius: '6px', marginBottom: '1rem' }}>
         <CodeMirror
@@ -75,12 +102,19 @@ function App() {
 
       {/* Error */}
       {error && (
-        <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '6px', padding: '1rem', marginBottom: '1rem', color: '#b91c1c' }}>
+        <div style={{
+          background: '#fee2e2',
+          border: '1px solid #ef4444',
+          borderRadius: '6px',
+          padding: '1rem',
+          marginBottom: '1rem',
+          color: '#b91c1c'
+        }}>
           {error}
         </div>
       )}
 
-      {/* DDL success message — CREATE, DROP, INSERT etc */}
+      {/* DDL success message */}
       {results && (!results.fields || results.fields.length === 0) && (
         <div style={{
           background: '#f0fdf4',
@@ -95,7 +129,7 @@ function App() {
         </div>
       )}
 
-      {/* Results Table — only when fields exist */}
+      {/* Results Table */}
       {results && results.fields && results.fields.length > 0 && (
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ marginBottom: '0.5rem' }}>Results — {results.rowCount} rows</h3>
@@ -104,7 +138,12 @@ function App() {
               <thead>
                 <tr>
                   {results.fields.map(f => (
-                    <th key={f} style={{ background: '#f1f5f9', padding: '8px 12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+                    <th key={f} style={{
+                      background: '#f1f5f9',
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      textAlign: 'left'
+                    }}>
                       {f}
                     </th>
                   ))}
@@ -128,6 +167,23 @@ function App() {
 
       {plan && <PlanVisualizer plan={plan} />}
       {lastQuery && <IndexAdvisor sql={lastQuery} />}
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <div style={{
+      padding: '2rem',
+      fontFamily: 'monospace',
+      maxWidth: '1000px',
+      margin: '0 auto'
+    }}>
+      <NavBar />
+      <Routes>
+        <Route path="/" element={<Editor />} />
+        <Route path="/dashboard" element={<SlowQueryDashboard />} />
+      </Routes>
     </div>
   )
 }
