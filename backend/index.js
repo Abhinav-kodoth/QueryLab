@@ -2,6 +2,7 @@ const express = require('express')
 const { Pool } = require('pg')
 const cors = require('cors')
 require('dotenv').config()
+const { createSandbox, destroySandbox, getSandboxPool } = require('./sandbox/manager')
 
 const app = express()
 app.use(cors())
@@ -178,7 +179,69 @@ app.get('/stats/slow-queries', async (req, res) => {
   }
 })
 
+// Create a new sandbox session
+app.post('/sandbox/create', async (req, res) => {
+  try {
+    const { v4: uuidv4 } = require('uuid')
+    const sessionId = uuidv4()
+    const result = await createSandbox(sessionId)
+    res.json({ sessionId: result.sessionId })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
+// Run a query in a sandbox session
+app.post('/sandbox/query', async (req, res) => {
+  const { sessionId, sql } = req.body
+
+  if (!sessionId || !sql) {
+    return res.status(400).json({ error: 'sessionId and sql required' })
+  }
+
+  try {
+    const pool = await getSandboxPool(sessionId)
+
+    if (!pool) {
+      return res.status(404).json({ 
+        error: 'Session not found or expired. Please create a new sandbox.' 
+      })
+    }
+
+    const result = await pool.query(sql)
+    res.json({
+      rows: result.rows,
+      rowCount: result.rowCount,
+      fields: result.fields ? result.fields.map(f => f.name) : []
+    })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+// Destroy a sandbox session manually
+app.delete('/sandbox/:sessionId', async (req, res) => {
+  try {
+    await destroySandbox(req.params.sessionId)
+    res.json({ message: 'Sandbox destroyed' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// List active sandboxes (useful for debugging)
+app.get('/sandbox/active', async (req, res) => {
+  const { activeSessions } = require('./sandbox/manager')
+  const sessions = []
+  activeSessions.forEach((value, key) => {
+    sessions.push({
+      sessionId: key,
+      port: value.port,
+      createdAt: value.createdAt
+    })
+  })
+  res.json({ count: sessions.length, sessions })
+})
 
 
 app.listen(process.env.PORT, () => {

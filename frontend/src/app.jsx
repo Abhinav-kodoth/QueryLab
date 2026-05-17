@@ -7,6 +7,7 @@ import './App.css'
 import PlanVisualizer from './PlanVisualizer'
 import IndexAdvisor from './IndexAdvisor'
 import SlowQueryDashboard from './SlowQueryDashboard'
+import Sandbox from './Sandbox'
 
 function NavBar() {
   const location = useLocation()
@@ -33,6 +34,7 @@ function NavBar() {
       <h1 style={{ margin: 0, fontFamily: 'monospace' }}>QueryLab</h1>
       <Link to="/" style={linkStyle('/')}>Editor</Link>
       <Link to="/dashboard" style={linkStyle('/dashboard')}>Slow Queries</Link>
+      <Link to="/sandbox" style={linkStyle('/sandbox')}>Sandbox</Link>
     </div>
   )
 }
@@ -183,6 +185,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Editor />} />
         <Route path="/dashboard" element={<SlowQueryDashboard />} />
+        <Route path="/sandbox" element={<Sandbox />} />
       </Routes>
     </div>
   )

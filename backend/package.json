@@ -10,9 +10,12 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bullmq": "^5.76.9",
     "cors": "^2.8.6",
+    "dockerode": "^5.0.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "uuid": "^14.0.0"
   }
 }
