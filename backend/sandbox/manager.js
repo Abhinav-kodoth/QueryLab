@@ -15,7 +15,7 @@ const cleanupQueue = new Queue('sandbox-cleanup', { connection: redisConnection 
 // sessionId → { containerId, port, pool, createdAt }
 const activeSessions = new Map()
 
-// Ask OS for a free port
+
 async function getFreePort() {
   return new Promise((resolve, reject) => {
     const net = require('net')
