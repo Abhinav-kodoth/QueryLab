@@ -243,6 +243,89 @@ app.get('/sandbox/active', async (req, res) => {
   res.json({ count: sessions.length, sessions })
 })
 
+app.post('/sandbox/explain', async (req, res) => {
+  const { sessionId, sql } = req.body
+
+  if (!sessionId || !sql) {
+    return res.status(400).json({ error: 'sessionId and sql required' })
+  }
+
+  const trimmed = sql.trim().toLowerCase()
+  if (!trimmed.startsWith('select')) {
+    return res.json({ plan: null, message: 'Query plan only available for SELECT statements' })
+  }
+
+  try {
+    const pool = await getSandboxPool(sessionId)
+
+    if (!pool) {
+      return res.status(404).json({ error: 'Session not found or expired' })
+    }
+
+    const explainSQL = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`
+    const result = await pool.query(explainSQL)
+    const plan = result.rows[0]['QUERY PLAN'][0]
+
+    res.json({ plan })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
+
+
+app.post('/sandbox/advise', async (req, res) => {
+  const { sessionId, sql } = req.body
+
+  if (!sessionId || !sql) {
+    return res.status(400).json({ error: 'sessionId and sql required' })
+  }
+
+  const trimmed = sql.trim().toLowerCase()
+  if (!trimmed.startsWith('select')) {
+    return res.json({ advice: null, message: 'Advisor only works on SELECT statements' })
+  }
+
+  try {
+    const pool = await getSandboxPool(sessionId)
+
+    if (!pool) {
+      return res.status(404).json({ error: 'Session not found or expired' })
+    }
+
+    const explainSQL = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`
+    const result = await pool.query(explainSQL)
+    const plan = result.rows[0]['QUERY PLAN'][0]
+
+    const seqScans = findSeqScans(plan['Plan'])
+
+    if (seqScans.length === 0) {
+      return res.json({
+        advice: null,
+        message: 'No sequential scans found. Query looks well optimized.'
+      })
+    }
+
+    const suggestions = seqScans.map(scan => {
+      const columns = extractColumns(scan.filter)
+      return {
+        table: scan.table,
+        rowsScanned: scan.rows,
+        cost: scan.cost,
+        filter: scan.filter,
+        suggestedIndex: columns.length > 0
+          ? `CREATE INDEX idx_${scan.table}_${columns.join('_')} ON ${scan.table}(${columns.join(', ')});`
+          : null,
+        reason: columns.length > 0
+          ? `Full table scan on ${scan.rows} rows. Adding an index on (${columns.join(', ')}) would allow Postgres to jump directly to matching rows.`
+          : `Full table scan on ${scan.rows} rows. Check your WHERE clause columns.`
+      }
+    })
+
+    res.json({ advice: suggestions })
+  } catch (err) {
+    res.status(400).json({ error: err.message })
+  }
+})
 
 app.listen(process.env.PORT, () => {
   console.log(`Server running on http://localhost:${process.env.PORT}`)
