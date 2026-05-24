@@ -8,6 +8,7 @@ import PlanVisualizer from './PlanVisualizer'
 import IndexAdvisor from './IndexAdvisor'
 import SlowQueryDashboard from './SlowQueryDashboard'
 import Sandbox from './Sandbox'
+import SchemaDesigner from './SchemaDesigner'
 
 function NavBar() {
   const location = useLocation()
@@ -35,6 +36,7 @@ function NavBar() {
       <Link to="/" style={linkStyle('/')}>Editor</Link>
       <Link to="/dashboard" style={linkStyle('/dashboard')}>Slow Queries</Link>
       <Link to="/sandbox" style={linkStyle('/sandbox')}>Sandbox</Link>
+      <Link to="/schema" style={linkStyle('/schema')}>Schema</Link>
     </div>
   )
 }
@@ -186,6 +188,7 @@ function App() {
         <Route path="/" element={<Editor />} />
         <Route path="/dashboard" element={<SlowQueryDashboard />} />
         <Route path="/sandbox" element={<Sandbox />} />
+        <Route path="/schema" element={<SchemaDesigner />} />
       </Routes>
     </div>
   )

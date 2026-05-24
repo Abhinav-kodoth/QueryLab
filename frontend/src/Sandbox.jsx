@@ -2,14 +2,25 @@ import { useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import axios from 'axios'
+import PlanVisualizer from './PlanVisualizer'
+import IndexAdvisor from './IndexAdvisor'
+import SandboxIndexAdvisor from './SandboxIndexAdvisor'
 
 export default function Sandbox() {
   const [sessionId, setSessionId] = useState(null)
-  const [query, setQuery] = useState('CREATE TABLE test (id SERIAL PRIMARY KEY, name TEXT);\nINSERT INTO test (name) VALUES (\'hello\'), (\'world\');\nSELECT * FROM test;')
+  const [query, setQuery] = useState(`CREATE TABLE users (id SERIAL PRIMARY KEY, name TEXT, email TEXT);
+
+INSERT INTO users (name, email)
+SELECT 'User ' || i, 'user' || i || '@example.com'
+FROM generate_series(1, 100000) AS i;`)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [plan, setPlan] = useState(null)
+  const [lastQuery, setLastQuery] = useState(null)
+
+  const isSelect = (q) => q.trim().toLowerCase().startsWith('select')
 
   const createSandbox = async () => {
     setCreating(true)
@@ -28,12 +39,25 @@ export default function Sandbox() {
     setLoading(true)
     setError(null)
     setResults(null)
+    setPlan(null)
+    setLastQuery(null)
+
     try {
       const res = await axios.post('http://localhost:3000/sandbox/query', {
         sessionId,
         sql: query
       })
       setResults(res.data)
+
+      if (isSelect(query)) {
+        setLastQuery(query)
+
+        const explainRes = await axios.post('http://localhost:3000/sandbox/explain', {
+          sessionId,
+          sql: query
+        })
+        setPlan(explainRes.data.plan)
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Query failed')
     } finally {
@@ -46,6 +70,9 @@ export default function Sandbox() {
       await axios.delete(`http://localhost:3000/sandbox/${sessionId}`)
       setSessionId(null)
       setResults(null)
+      setPlan(null)
+      setLastQuery(null)
+      setError(null)
     } catch (err) {
       setError('Failed to destroy sandbox')
     }
@@ -55,11 +82,10 @@ export default function Sandbox() {
     <div style={{ padding: '2rem', fontFamily: 'monospace', maxWidth: '1000px', margin: '0 auto' }}>
       <h2 style={{ marginBottom: '0.5rem' }}>Isolated Sandbox</h2>
       <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '1.5rem' }}>
-        Each sandbox is a fresh isolated PostgreSQL container. 
+        Each sandbox is a fresh isolated PostgreSQL container.
         Your queries only affect your sandbox. Auto-destroys after 15 min idle.
       </p>
 
-      {/* No session yet */}
       {!sessionId && (
         <button
           onClick={createSandbox}
@@ -78,7 +104,6 @@ export default function Sandbox() {
         </button>
       )}
 
-      {/* Active session */}
       {sessionId && (
         <div>
           <div style={{
@@ -113,7 +138,7 @@ export default function Sandbox() {
           <div style={{ border: '1px solid #ccc', borderRadius: '6px', marginBottom: '1rem' }}>
             <CodeMirror
               value={query}
-              height="180px"
+              height="220px"
               extensions={[sql()]}
               onChange={(val) => setQuery(val)}
             />
@@ -138,7 +163,6 @@ export default function Sandbox() {
         </div>
       )}
 
-      {/* Error */}
       {error && (
         <div style={{
           background: '#fee2e2',
@@ -153,16 +177,20 @@ export default function Sandbox() {
         </div>
       )}
 
-      {/* Results */}
       {results && results.fields && results.fields.length > 0 && (
-        <div>
+        <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ marginBottom: '0.5rem' }}>Results — {results.rowCount} rows</h3>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr>
                   {results.fields.map(f => (
-                    <th key={f} style={{ background: '#f1f5f9', padding: '8px 12px', border: '1px solid #e2e8f0', textAlign: 'left' }}>
+                    <th key={f} style={{
+                      background: '#f1f5f9',
+                      padding: '8px 12px',
+                      border: '1px solid #e2e8f0',
+                      textAlign: 'left'
+                    }}>
                       {f}
                     </th>
                   ))}
@@ -191,10 +219,17 @@ export default function Sandbox() {
           borderRadius: '6px',
           padding: '1rem',
           color: '#166534',
-          fontSize: '13px'
+          fontSize: '13px',
+          marginBottom: '1rem'
         }}>
           ✅ Query executed. {results.rowCount} rows affected.
         </div>
+      )}
+
+      {plan && <PlanVisualizer plan={plan} />}
+
+      {lastQuery && sessionId && (
+        <SandboxIndexAdvisor sessionId={sessionId} sql={lastQuery} />
       )}
     </div>
   )
