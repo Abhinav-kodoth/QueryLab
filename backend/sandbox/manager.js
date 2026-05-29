@@ -55,7 +55,7 @@ async function createSandbox(sessionId) {
         PortBindings: {
           '5432/tcp': [{ HostPort: String(port) }]
         },
-        Memory: 256 * 1024 * 1024, // 256MB RAM limit
+        Memory: 128 * 1024 * 1024, // 256MB RAM limit
         CpuPeriod: 100000,
         CpuQuota: 50000             // 50% of one CPU core
       },
