@@ -46,12 +46,15 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_ENVIRONMENT: ${VITE_ENVIRONMENT}
     container_name: querylab-frontend
     environment:
       VITE_API_URL: ${VITE_API_URL}
-      VITE_ENVIRONMENT: production
-
+      VITE_ENVIRONMENT: ${VITE_ENVIRONMENT}
   nginx:
     image: nginx:alpine
     container_name: querylab-nginx
