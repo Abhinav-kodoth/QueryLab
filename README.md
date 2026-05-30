@@ -47,7 +47,7 @@ The sandbox feature spawns isolated PostgreSQL containers using the Docker socke
 ---
 
 ## Project structure
-
+```bash
 querylab/
 ├── backend/
 │   ├── index.js          # Express routes
@@ -71,6 +71,7 @@ querylab/
 │   └── provisioning/
 ├── docker-compose.yml
 └── init.sql
+```
 
 ## What I learned
 
