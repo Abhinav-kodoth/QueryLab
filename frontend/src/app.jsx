@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
-import axios from 'axios'
+import api from './api'
 import './app.css'
 import PlanVisualizer from './PlanVisualizer'
 import IndexAdvisor from './IndexAdvisor'
@@ -59,12 +59,12 @@ function Editor() {
     setLastQuery(null)
 
     try {
-      const res = await axios.post('http://localhost:3000/query', { sql: query })
+      const res = await api.post('/query', { sql: query })
       setResults(res.data)
 
       if (isSelect(query)) {
         setLastQuery(query)
-        const explainRes = await axios.post('http://localhost:3000/explain', { sql: query })
+        const explainRes = await api.post('/explain', { sql: query })
         setPlan(explainRes.data.plan)
       }
     } catch (err) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from './api'
 
 function CacheBar({ ratio }) {
   const pct = ratio ?? 0
@@ -41,7 +41,7 @@ export default function SlowQueryDashboard() {
 
   const fetchStats = () => {
     setLoading(true)
-    axios.get('http://localhost:3000/stats/slow-queries')
+    api.get('/stats/slow-queries')
       .then(res => setQueries(res.data.queries))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))

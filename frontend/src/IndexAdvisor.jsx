@@ -1,7 +1,7 @@
 //frontend for already made /advisor endpt
 
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from './api'
 
 export default function IndexAdvisor({ sql }) {
   const [advice, setAdvice] = useState(null)
@@ -14,7 +14,7 @@ export default function IndexAdvisor({ sql }) {
     setAdvice(null)
     setMessage(null)
 
-    axios.post('http://localhost:3000/advise', { sql })
+    api.post('/advise', { sql })
       .then(res => {
         setAdvice(res.data.advice)
         setMessage(res.data.message)

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
-import axios from 'axios'
+import api from './api'
 import PlanVisualizer from './PlanVisualizer'
 import IndexAdvisor from './IndexAdvisor'
 import SandboxIndexAdvisor from './SandboxIndexAdvisor'
@@ -26,7 +26,7 @@ FROM generate_series(1, 100000) AS i;`)
     setCreating(true)
     setError(null)
     try {
-      const res = await axios.post('http://localhost:3000/sandbox/create')
+      const res = await api.post('/sandbox/create')
       setSessionId(res.data.sessionId)
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create sandbox')
@@ -43,19 +43,13 @@ FROM generate_series(1, 100000) AS i;`)
     setLastQuery(null)
 
     try {
-      const res = await axios.post('http://localhost:3000/sandbox/query', {
-        sessionId,
-        sql: query
-      })
+      const res = await api.post('/sandbox/query', { sessionId, sql: query })
       setResults(res.data)
 
       if (isSelect(query)) {
         setLastQuery(query)
 
-        const explainRes = await axios.post('http://localhost:3000/sandbox/explain', {
-          sessionId,
-          sql: query
-        })
+        const explainRes = await api.post('/sandbox/explain', { sessionId, sql: query })
         setPlan(explainRes.data.plan)
       }
     } catch (err) {
@@ -67,7 +61,7 @@ FROM generate_series(1, 100000) AS i;`)
 
   const destroySandbox = async () => {
     try {
-      await axios.delete(`http://localhost:3000/sandbox/${sessionId}`)
+      await api.delete(`/sandbox/${sessionId}`)
       setSessionId(null)
       setResults(null)
       setPlan(null)

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import axios from 'axios'
+import api from './api'
 
 export default function SandboxIndexAdvisor({ sessionId, sql }) {
   const [advice, setAdvice] = useState(null)
@@ -13,7 +13,7 @@ export default function SandboxIndexAdvisor({ sessionId, sql }) {
     setAdvice(null)
     setMessage(null)
 
-    axios.post('http://localhost:3000/sandbox/advise', { sessionId, sql })
+    api.post('/sandbox/advise', { sessionId, sql })
       .then(res => {
         setAdvice(res.data.advice)
         setMessage(res.data.message)
