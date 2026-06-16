@@ -85,7 +85,7 @@ Nginx (port 80) ─── reverse proxy
 **Prerequisites:** Docker Desktop, Node.js 20+, Git
 
 ```bash
-git clone https://github.com/yourusername/querylab.git
+git clone https://github.com/Abhinav-kodoth/querylab.git
 cd querylab
 docker compose up --build
 ```
