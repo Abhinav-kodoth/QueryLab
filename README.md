@@ -113,8 +113,7 @@ querylab/
 │   ├── index.js          # Express routes
 │   ├── sandbox/
 │   │   └── manager.js    # dockerode sandbox lifecycle
-│   └── metrics/
-│       └── index.js      # Prometheus metrics
+│   
 ├── frontend/
 │   └── src/
 │       ├── App.jsx           # Main editor
@@ -125,10 +124,6 @@ querylab/
 │       └── SchemaDesigner.jsx
 ├── nginx/
 │   └── nginx.conf
-├── prometheus/
-│   └── prometheus.yml
-├── grafana/
-│   └── provisioning/
 ├── docker-compose.yml
 └── init.sql
 ```
